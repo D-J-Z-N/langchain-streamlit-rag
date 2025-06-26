@@ -8,7 +8,7 @@ from langchain_core.prompts import ChatPromptTemplate
 import os
 from dotenv import load_dotenv
 from langchain_openai.chat_models import ChatOpenAI
-from langchain_community.document_loaders import WebBaseLoader
+from langchain_community.document_loaders import WebBaseLoader, PyPDFLoader
 import bs4
 import openai
 
@@ -23,11 +23,22 @@ github_model = "openai/gpt-4.1-nano"
 openai_api_key = os.getenv("OPENAI_API_KEY")
 embedding_model = "text-embedding-3-small"
 
-loader = WebBaseLoader(
-    web_paths=("https://lt.wikipedia.org/wiki/Klaip%C4%97da",),
+# Load from web
+web_loader = WebBaseLoader(
+    web_paths=(
+        "https://lt.wikipedia.org/wiki/Klaip%C4%97da",
+        "https://klaipedatravel.lt/",
+    ),
 )
-docs = loader.load()
-print(f"Loaded {len(docs)} document(s) from the web path.")
+web_docs = web_loader.load()
+
+# Load from the local text file
+file_loader = PyPDFLoader("./Pesciomis-po-Klaipeda-LT.pdf")
+file_docs = file_loader.load_and_split()
+
+# Combine all documents
+docs = web_docs + file_docs
+print(f"Loaded {len(docs)} document(s) from all sources.")
 
 text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=10)
 splits = text_splitter.split_documents(docs)
