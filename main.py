@@ -1,71 +1,75 @@
-from langchain_chroma import Chroma
 from langchain_openai import OpenAIEmbeddings
+from langchain_core.vectorstores.in_memory import InMemoryVectorStore
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 import streamlit as st
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnablePassthrough
-
+from langchain_core.prompts import ChatPromptTemplate
 import os
-from langchain import hub
-
 from dotenv import load_dotenv
 from langchain_openai.chat_models import ChatOpenAI
 from langchain_community.document_loaders import WebBaseLoader
-import bs4  # BeautifulSoup for parsing HTML
+import bs4
+import openai
 
-from chromadb.config import Settings
+load_dotenv()
 
+# For GitHub models (completions)
+github_token = os.getenv("GITHUB_TOKEN")
+github_endpoint = "https://models.github.ai/inference"
+github_model = "openai/gpt-4.1-nano"
 
-load_dotenv()  # take environment variables
-
-# from .env file
-# Load environment variables from .env file
-
-token = os.getenv("GITHUB_API_KEY")  # Replace with your actual token
-endpoint = "https://models.github.ai/inference"
-model = "openai/gpt-4.1-nano"
+# For OpenAI models (embeddings)
+openai_api_key = os.getenv("OPENAI_API_KEY")
+embedding_model = "text-embedding-3-small"
 
 loader = WebBaseLoader(
     web_paths=("https://lt.wikipedia.org/wiki/Klaip%C4%97da",),
-    bs_kwargs=dict(
-        parse_only=bs4.SoupStrainer(
-            class_=("mw-page-title-main", "mw-content-ltr", "mw-heading")
-        )
-    ),
 )
 docs = loader.load()
+print(f"Loaded {len(docs)} document(s) from the web path.")
 
 text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=10)
 splits = text_splitter.split_documents(docs)
+print(f"Created {len(splits)} text splits for embedding.")
 
+# Set up OpenAIEmbeddings using OpenAI public API
 embedding_fn = OpenAIEmbeddings(
-    model="text-embedding-3-small",
-    base_url="https://models.inference.ai.azure.com",
-    api_key=token,
+    model=embedding_model,
+    api_key=openai_api_key,
 )
 
-# Check if you want to rebuild or load vectorstore
-PERSIST_DIR = ".chroma"
-REBUILD_VECTORSTORE = not os.path.exists(PERSIST_DIR)
-
-if REBUILD_VECTORSTORE:
+try:
+    print("Creating in-memory vector store...")
     if not splits:
         raise ValueError("No document splits were created. Check if the web page content was properly loaded and split.")
-    vectorstore = Chroma.from_documents(
+    vectorstore = InMemoryVectorStore.from_documents(
         documents=splits,
         embedding=embedding_fn,
-        persist_directory=PERSIST_DIR,
     )
-    vectorstore.persist()
-else:
-    vectorstore = Chroma(
-        persist_directory=".chroma",
-        embedding_function=embedding_fn,
-    )
-
+    print("✅ In-memory vector store created.")
+except openai.AuthenticationError:
+    print("🔴 AUTHENTICATION ERROR: Invalid OpenAI API key")
+    st.stop()
+except Exception as e:
+    print(f"🔴 Error: {e}")
+    import traceback
+    print(traceback.format_exc())
+    st.stop()
 
 retriever = vectorstore.as_retriever()
-prompt = hub.pull("rlm/rag-prompt")
+
+template = """You are an assistant for question-answering tasks. Your task is to answer questions strictly based on the provided context about Klaipėda.
+Use the following pieces of retrieved context to answer the question.
+If the context does not contain the answer, you must state that you don't know.
+Do not use any external knowledge or information you were trained on. Your entire answer must be derived from the text provided in the 'Context' section.
+
+Question: {question} 
+
+Context: {context} 
+
+Answer:"""
+prompt = ChatPromptTemplate.from_template(template)
 
 def format_docs(docs):
     print(docs)
@@ -75,9 +79,12 @@ st.title("Streamlit LangChain Demo")
 st.markdown("### Klaipėda RAG")
 
 def generate_response(input_text):
-    llm = ChatOpenAI(base_url=endpoint, temperature=0.7, api_key=token, model=model)
+    # Use GitHub models for chat completions
+    llm = ChatOpenAI(base_url=github_endpoint, temperature=0.7, api_key=github_token, model=github_model)
 
-    fetched_docs = vectorstore.search(input_text, search_type="similarity", k=3)
+    print("Searching for relevant documents...")
+    fetched_docs = vectorstore.similarity_search(input_text, k=3)
+    print(f"✅ Retrieved {len(fetched_docs)} documents.")
 
     rag_chain = (
         {"context": retriever | format_docs, "question": RunnablePassthrough()}
@@ -85,7 +92,6 @@ def generate_response(input_text):
         | llm
         | StrOutputParser()
         )
-    
     
     st.info(rag_chain.invoke(input_text))
 
