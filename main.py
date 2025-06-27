@@ -9,7 +9,6 @@ import os
 from dotenv import load_dotenv
 from langchain_openai.chat_models import ChatOpenAI
 from langchain_community.document_loaders import WebBaseLoader, PyPDFLoader
-import bs4
 import openai
 
 load_dotenv()
@@ -90,7 +89,7 @@ st.title("Streamlit LangChain Demo")
 st.markdown("### Klaipėda RAG")
 
 def generate_response(input_text):
-    # Use GitHub models for chat completions
+    # GitHub models for chat completions
     llm = ChatOpenAI(base_url=github_endpoint, temperature=0.7, api_key=github_token, model=github_model)
 
     print("Searching for relevant documents...")
