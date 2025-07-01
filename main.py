@@ -32,7 +32,7 @@ web_loader = WebBaseLoader(
 web_docs = web_loader.load()
 
 # Load from the local text file
-file_loader = PyPDFLoader("./Pesciomis-po-Klaipeda-LT.pdf")
+file_loader = PyPDFLoader("./data/Pesciomis-po-Klaipeda-LT.pdf")
 file_docs = file_loader.load_and_split()
 
 # Combine all documents
@@ -113,7 +113,7 @@ def generate_response(input_text):
 with st.form("my_form"):
     text = st.text_area(
         "Enter text:",
-        "Ask something about Klaipėdą",
+        "Ask something about Klaipėda",
     )
     submitted = st.form_submit_button("Submit")
     if submitted:

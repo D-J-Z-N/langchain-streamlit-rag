@@ -1,25 +1,54 @@
 # langchain-streamlit-rag
 
-Tasks:
+A Streamlit app demonstrating Retrieval-Augmented Generation (RAG) for answering questions about Klaipėda, Lithuania. The app uses LangChain to load and embed documents from multiple sources (web, PDF, and text), stores them in an in-memory vector store, and provides a conversational interface for question answering.
 
-We have a working chatbot example:
-samples\streamlit-demo\streamlit-langchain.py
+## Features
+- Loads knowledge from:
+  - Wikipedia and Klaipėda travel web pages
+  - A local PDF file: `Pesciomis-po-Klaipeda-LT.pdf`
+- Splits documents into chunks and embeds them using OpenAI embeddings
+- Stores embeddings in an in-memory vector store
+- Uses a chat model (via GitHub API) to answer questions based on retrieved context
+- Displays sources for each answer
 
-----------------------------------------------
+## Setup
 
-1. Create a new project, git repo, uv and have the sample code running.
-2. Update the sample code to be a RAG chatbot of your home town.
-You two approaches here:
-  - You can copy information from wiki into a .txt  or (pdf or .md) file and load it with langchain.
-  - You can Scrape information directly from the wiki webpage (or other) and load the data using langchain.
+### 1. Clone the repository
+```sh
+git clone <repo-url>
+cd langchain-streamlit-rag
+```
 
------------------------------------------------
+### 2. Install Python (recommended: 3.13)
+Ensure you have Python 3.13 installed. You can use [pyenv](https://github.com/pyenv/pyenv) or check `.python-version`.
 
-3. Update your application to display the chunks/sources of information.
+### 3. Install dependencies
+We recommend using [uv](https://github.com/astral-sh/uv) for fast installs:
+```sh
+uv pip install -r pyproject.toml
+```
+Or use pip:
+```sh
+pip install -r pyproject.toml
+```
 
-example is in samples\streamlit-demo\streamlit-source.py
+### 4. Set up environment variables
+Copy `.env.example` to `.env` and fill in your API keys:
+```sh
+cp .env.example .env
+```
 
------------------------------------------------
+### 5. Run the app
+```sh
+streamlit run main.py
+```
 
-4. Please update your 'knowledge base' of your home-town so that it would come from 3 different sources.
-One of the source must be a file.
+## Environment Variables
+The app requires the following environment variables (see `.env.example`):
+- `OPENAI_API_KEY` – Your OpenAI API key for embeddings
+- `GITHUB_TOKEN` – Your GitHub token for using the GitHub-hosted chat model
+
+## Data Sources
+- [Wikipedia: Klaipėda](https://lt.wikipedia.org/wiki/Klaip%C4%97da)
+- [Klaipėda Travel](https://klaipedatravel.lt/)
+- `Pesciomis-po-Klaipeda-LT.pdf` (local PDF)
