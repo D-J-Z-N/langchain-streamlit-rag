@@ -51,4 +51,4 @@ The app requires the following environment variables (see `.env.example`):
 ## Data Sources
 - [Wikipedia: Klaipėda](https://lt.wikipedia.org/wiki/Klaip%C4%97da)
 - [Klaipėda Travel](https://klaipedatravel.lt/)
-- `Pesciomis-po-Klaipeda-LT.pdf` (local PDF, source https://klaipedatravel.lt/)
+- `Pesciomis-po-Klaipeda-LT.pdf` (PDF, source https://klaipedatravel.lt/)
