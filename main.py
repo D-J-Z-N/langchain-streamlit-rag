@@ -22,51 +22,56 @@ github_model = "openai/gpt-4.1-nano"
 openai_api_key = os.getenv("OPENAI_API_KEY")
 embedding_model = "text-embedding-3-small"
 
-# Load from web
-web_loader = WebBaseLoader(
-    web_paths=(
-        "https://lt.wikipedia.org/wiki/Klaip%C4%97da",
-        "https://klaipedatravel.lt/",
-    ),
-)
-web_docs = web_loader.load()
-
-# Load from the local text file
-file_loader = PyPDFLoader("./data/Pesciomis-po-Klaipeda-LT.pdf")
-file_docs = file_loader.load_and_split()
-
-# Combine all documents
-docs = web_docs + file_docs
-print(f"Loaded {len(docs)} document(s) from all sources.")
-
-text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=10)
-splits = text_splitter.split_documents(docs)
-print(f"Created {len(splits)} text splits for embedding.")
-
-# Set up OpenAIEmbeddings using OpenAI public API
-embedding_fn = OpenAIEmbeddings(
-    model=embedding_model,
-    api_key=openai_api_key,
-)
-
-try:
-    print("Creating in-memory vector store...")
-    if not splits:
-        raise ValueError("No document splits were created. Check if the web page content was properly loaded and split.")
-    vectorstore = InMemoryVectorStore.from_documents(
-        documents=splits,
-        embedding=embedding_fn,
+@st.cache_resource
+def load_vectorstore():
+    # Load from web
+    web_loader = WebBaseLoader(
+        web_paths=(
+            "https://lt.wikipedia.org/wiki/Klaip%C4%97da",
+            "https://klaipedatravel.lt/",
+        ),
     )
-    print("✅ In-memory vector store created.")
-except openai.AuthenticationError:
-    print("🔴 AUTHENTICATION ERROR: Invalid OpenAI API key")
-    st.stop()
-except Exception as e:
-    print(f"🔴 Error: {e}")
-    import traceback
-    print(traceback.format_exc())
-    st.stop()
+    web_docs = web_loader.load()
 
+    # Load from the local PDF file
+    file_loader = PyPDFLoader("./data/Pesciomis-po-Klaipeda-LT.pdf")
+    file_docs = file_loader.load_and_split()
+
+    # Combine all documents
+    docs = web_docs + file_docs
+    print(f"Loaded {len(docs)} document(s) from all sources.")
+
+    text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=10)
+    splits = text_splitter.split_documents(docs)
+    print(f"Created {len(splits)} text splits for embedding.")
+
+    # Set up OpenAIEmbeddings using OpenAI public API
+    embedding_fn = OpenAIEmbeddings(
+        model=embedding_model,
+        api_key=openai_api_key,
+    )
+
+    try:
+        print("Creating in-memory vector store...")
+        if not splits:
+            raise ValueError("No document splits were created. Check if the web page content was properly loaded and split.")
+        vectorstore = InMemoryVectorStore.from_documents(
+            documents=splits,
+            embedding=embedding_fn,
+        )
+        print("✅ In-memory vector store created.")
+    except openai.AuthenticationError:
+        print("🔴 AUTHENTICATION ERROR: Invalid OpenAI API key")
+        st.stop()
+    except Exception as e:
+        print(f"🔴 Error: {e}")
+        import traceback
+        print(traceback.format_exc())
+        st.stop()
+
+    return vectorstore
+
+vectorstore = load_vectorstore()
 retriever = vectorstore.as_retriever()
 
 template = """You are an assistant for question-answering tasks. Your task is to answer questions strictly based on the provided context about Klaipėda.

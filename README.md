@@ -25,7 +25,7 @@ Ensure you have Python 3.13 installed. You can use [pyenv](https://github.com/py
 ### 3. Install dependencies
 We recommend using [uv](https://github.com/astral-sh/uv) for fast installs:
 ```sh
-uv pip install -r pyproject.toml
+uv add
 ```
 Or use pip:
 ```sh
