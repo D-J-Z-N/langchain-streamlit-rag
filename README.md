@@ -25,7 +25,7 @@ Ensure you have Python 3.13 installed. You can use [pyenv](https://github.com/py
 ### 3. Install dependencies
 We recommend using [uv](https://github.com/astral-sh/uv) for fast installs:
 ```sh
-uv add
+uv sync
 ```
 Or use pip:
 ```sh
@@ -51,4 +51,4 @@ The app requires the following environment variables (see `.env.example`):
 ## Data Sources
 - [Wikipedia: Klaipėda](https://lt.wikipedia.org/wiki/Klaip%C4%97da)
 - [Klaipėda Travel](https://klaipedatravel.lt/)
-- `Pesciomis-po-Klaipeda-LT.pdf` (local PDF)
+- `Pesciomis-po-Klaipeda-LT.pdf` (local PDF, source https://klaipedatravel.lt/)
